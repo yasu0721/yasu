@@ -1,0 +1,111 @@
+# config.yaml
+# 数値・閾値・ジャンル・除外ルールなど、コードを触らず変更してよい設定値をまとめたファイル。
+
+# ── 運用スケジュール ──
+schedule:
+  interval_minutes: 60          # 巡回・投稿間隔(10/30/60/120/180分などから選択)
+  active_hours:
+    start: "06:00"
+    end: "01:00"                 # 1:00〜6:00は非稼働
+  daily_action_limit:
+    total: 15                    # 1日の合計アクション上限(10〜20の範囲で選択)
+    own_post_ratio: 0.2          # 自分発信の比率
+    comment_ratio: 0.6           # コメントの比率
+    quote_retweet_ratio: 0.2     # 引用RTの比率
+  mode: "半自動"                 # 手動 / 半自動(要確認) / 完全自動
+
+# ── バズ判定閾値 ──
+buzz_threshold:
+  min_likes: 100
+  min_retweets: 30
+  max_hours_since_post: 6
+scoring:
+  method: "likes_per_hour"       # 伸び率スコアリング(いいね数÷経過時間)
+
+# ── 対象ジャンル ──
+target_genres:
+  - 起業
+  - SNS攻略
+  - マーケティング
+genre_keywords:
+  起業:
+    - 起業
+    - 経営者
+    - スタートアップ
+  SNS攻略:
+    - X運用
+    - フォロワー
+    - バズる
+
+# ── 著名人・インフルエンサー対応 ──
+influencer_mode:
+  enabled: true
+  target_accounts: []            # 例: "@hirox246" のように追加
+  auto_research: true            # 過去言動・経歴の自動リサーチ
+  influence_rank_check: true     # S/A/B/Cランク判定を行う
+  risk_flagged_accounts: []      # 刑事有罪判決・重大な炎上歴がある人物。事前登録せず都度判断。該当が疑われる場合は生成前に警告し、原則見送りを推奨
+  teasing_mode:
+    enabled_condition: "本人が自虐ネタとして公にしている、または広く知られたポジティブな転換ストーリーがある場合のみ"
+    forbidden_topics: ["訴訟", "家族トラブル", "触れられたくない過去", "実績の否定"]
+
+# ── 除外ルール ──
+exclusion_rules:
+  exclude_sponsored_ads: true            # 「広告」ラベルが付いた投稿は候補から除外
+  exclude_low_quality_moneymaking: true  # 断定的な副業・稼げる系セールスコピーは除外
+  sensitive_topics:
+    excluded:
+      - 政治(党派・政策論争・特定政党や政治家個人への言及)
+      - 宗教
+      - アダルト
+      - 差別・ジェンダー論争
+      - 医療健康の断定的アドバイス
+      - 投資の断定的助言
+      - 他人の炎上への便乗
+      - 著作権グレー(ネタバレ等)
+    excluded_exceptions:
+      - "業界の規制・構造批判(タクシー業界の規制緩和など)は政治ではなく経済ジャンルとして生成OK"
+    allowed_with_caution:
+      - 事件事故
+      - 訃報
+      - 災害
+      - スポーツ(審判批判・ファン同士の対立煽りは除く)
+
+# ── パターン適用ルール ──
+pattern_eligibility:
+  通常投稿:
+    comment_patterns: [1,2,3,4,5,6,7,8,9,10]
+    quote_patterns: [1,2,3,4]
+  シリアス系(事件・災害等):
+    comment_patterns: [1,2,3,7,15,16,19]   # 意外性型(13)・自己投影型(14)は除外
+    quote_patterns: [2]                     # 要約・翻訳型のみ標準採用
+    quote_patterns_caution: [1]             # 意見主役型は要確認ランク
+    quote_patterns_excluded: [3,4]          # 実例接続型・インプレッション狙い型は不適合
+    tone_override: "serious_mode"
+    allow_skip: true
+  経験談・内省系(失敗談・弱み開示を含む投稿):
+    comment_patterns: [1,2,4,6,7]           # 共感・分析・ノウハウ・経験談・質問返しのみ
+    quote_patterns: [1,2]
+    excluded_patterns_note: "ユーモア型(9)・軽口型・ミーム型(12)・短文インパクト型(8)は誠実さを欠くため除外"
+  ネタ・ミーム系投稿:
+    comment_patterns: [8,9,12]
+    quote_patterns: [3]
+  広告投稿:
+    action: "skip"
+    reason: "スポンサード投稿は評判リスクが高く、有機的なバズとは性質が異なるため"
+
+# ── 多様性コントロール(AIっぽさ対策) ──
+diversity_control:
+  enabled: true
+  lookback_count: 8               # 直近何件を見て多様性判定するか
+  avoid_repeat_pattern: true      # 同じパターンタイプの連続を避ける
+  vary_length: true               # 短文/長文をランダム性を持たせて混ぜる
+  vary_tone: true                 # 受け狙い系/分析系/短文系などを偏らせない
+  casual_ratio_target: "3割程度"   # 深掘り型に対して、軽いノリ・素朴な質問・ツッコミ型を混ぜる目安比率
+                                    # (シリアス系・経験談内省系では適用しない)
+
+# ── 引用RTのオープナー方針 ──
+quote_opener_policy:
+  mode: "generative_with_examples"   # 固定貼り付けではなく生成方式
+  tone_tagging: true
+  require_specific_reference: true   # 元投稿の固有要素を必ず1つ含める
+  diversity_tracking: true

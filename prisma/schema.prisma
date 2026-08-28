@@ -1,0 +1,86 @@
+// Prisma schema for the X buzz-riding assistant (MVP)
+// See ../spec/要件定義書.md for the full requirements this models.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// SQLite has no native enum type, so these are plain strings at the DB
+// level. Valid values are enforced in application code (see lib/types.ts):
+// PostClassification: "NORMAL" | "SERIOUS" | "EXPERIENCE" | "MEME" | "AD"
+// InfluencerRank:      "S" | "A" | "B" | "C"
+// ActionType:          "COMMENT" | "QUOTE" | "OWN_POST"
+// CandidateStatus:     "PENDING" | "POSTED" | "SKIPPED"
+
+model Post {
+  id                String              @id @default(cuid())
+  xPostId           String              @unique
+  authorHandle      String
+  authorName        String
+  authorFollowers   Int                 @default(0)
+  authorAvatarUrl   String?
+  text              String
+  likeCount         Int                 @default(0)
+  retweetCount      Int                 @default(0)
+  postedAt          DateTime
+  fetchedAt         DateTime            @default(now())
+  genre             String?
+  classification    String              @default("NORMAL")
+  buzzScore         Float               @default(0)
+  isAd              Boolean             @default(false)
+  influencerRank    String?
+  excluded          Boolean             @default(false)
+  exclusionReason   String?
+  candidates        Candidate[]
+
+  @@index([fetchedAt])
+}
+
+model Candidate {
+  id            String           @id @default(cuid())
+  postId        String
+  post          Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type          String
+  patternId     Int
+  patternName   String
+  content       String
+  selfCheckLog  String? // JSON string: history of self-check loop iterations
+  status        String           @default("PENDING")
+  createdAt     DateTime         @default(now())
+  actionLog     ActionLog?
+
+  @@index([postId])
+  @@index([status])
+}
+
+model ActionLog {
+  id             String     @id @default(cuid())
+  candidateId    String     @unique
+  candidate      Candidate  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  action         String // "posted" | "skipped"
+  postedTweetId  String?
+  postedAt       DateTime   @default(now())
+}
+
+model InfluencerCache {
+  id               String    @id @default(cuid())
+  handle           String    @unique
+  rank             String
+  researchSummary  String?
+  riskFlagged      Boolean   @default(false)
+  updatedAt        DateTime  @updatedAt
+}
+
+// Singleton row (id = "default") holding the live, editable config.
+// Seeded from spec/config.yaml on first run; edits from the Settings screen
+// are written here so they take effect immediately without touching the file.
+model AppSettings {
+  id         String   @id @default("default")
+  configJson String
+  updatedAt  DateTime @updatedAt
+}
