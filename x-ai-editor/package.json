@@ -7,7 +7,8 @@
     "read-input": "node automation/read_input.js",
     "test-browser": "node automation/browser_test.js",
     "router": "node automation/router.js",
-    "generate": "node automation/generate.js"
+    "generate": "node automation/generate.js",
+    "app": "node automation/server.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",
