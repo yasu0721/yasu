@@ -6,7 +6,8 @@ X(旧Twitter)投稿のネタ作りを半自動化するためのプロジェク�
 ## 普段やること
 
 1. `input/input.txt` を開いて、ニュースやX投稿を貼って保存する
-2. `npm run generate` を実行する
+2. `run.bat` をダブルクリックする(Windowsの場合。初回は自動で準備が走ります)
+   もしくはターミナルで `npm run generate` を実行する
 3. `final/<日時>/final.txt` を見る(編集長GPTが選んだ最終候補)
 
 これだけです。振り分けGPTが必要な専門GPTを選び、それぞれの案を編集長GPTが
