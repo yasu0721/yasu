@@ -17,3 +17,6 @@ Call log:
 [2026-08-29T17:07:09.842Z] router: 成功 - run_id=20260829_170709 mocked=true
 [2026-08-29T17:11:07.402Z] router: 失敗 - 400 {"type":"error","error":{"type":"invalid_request_error","message":"anthropic-workspace-id is required when authenticating with an identity-linked API key; send the id of the workspace this request acts in."},"request_id":null}
 [2026-08-29T17:14:05.241Z] router: 失敗 - 400 {"type":"error","error":{"type":"invalid_request_error","message":"anthropic-workspace-id is required when authenticating with an identity-linked API key; send the id of the workspace this request acts in."},"request_id":null}
+[2026-08-29T17:18:56.045Z] generate: 成功(meme) - run_id=20260829_171856
+[2026-08-29T17:18:56.045Z] generate: 成功(person) - run_id=20260829_171856
+[2026-08-29T17:18:56.045Z] generate: 完了 - run_id=20260829_171856 success=meme|person failed=

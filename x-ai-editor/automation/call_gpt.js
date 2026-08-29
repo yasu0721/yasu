@@ -29,9 +29,19 @@ function loadPromptText(promptFile) {
 }
 
 // APIキー未設定時のモック応答。既存のNext.jsアプリと同じ考え方([MOCK/...]表記)。
-function mockReply(gptName, material) {
+// routerだけは、後続処理(専門GPT自動選択)をテストできるよう、実際の
+// 振り分けGPTが返す形式に似せたダミー応答にしている。
+function mockReply(gpt, material) {
   const preview = material.trim().slice(0, 40).replace(/\s+/g, ' ');
-  return `[MOCK/${gptName}] ANTHROPIC_API_KEY未設定のため、これはダミー応答です。\n受け取った素材(先頭): ${preview}...`;
+  if (gpt.role_type === 'router') {
+    return (
+      `[MOCK/${gpt.name}] ANTHROPIC_API_KEY未設定のため、これはダミー応答です。\n\n` +
+      `【使うGPT】\n- meme: ネット民的な切り口が向きそうなため\n- person: 人物・一般化の視点も足せそうなため\n\n` +
+      `【狙う反応】\nいいね\n\n` +
+      `【避けるもの】\n断定的すぎる表現(素材: ${preview}...)`
+    );
+  }
+  return `[MOCK/${gpt.name}] ANTHROPIC_API_KEY未設定のため、これはダミー応答です。\n受け取った素材(先頭): ${preview}...`;
 }
 
 // 指定したGPT役割(id)へ、素材と追加指示を渡して応答を得る。
@@ -48,7 +58,7 @@ async function callGpt(id, material, extraInstruction = '') {
   const userMessage = userMessageParts.join('\n\n');
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    return { text: mockReply(gpt.name, material), gptName: gpt.name, mocked: true };
+    return { text: mockReply(gpt, material), gptName: gpt.name, mocked: true };
   }
 
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
