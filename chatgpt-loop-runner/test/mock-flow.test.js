@@ -21,7 +21,7 @@ pathsModule.PATHS.runsDir = path.join(TEST_ROOT, 'state', 'runs');
 pathsModule.PATHS.logs = path.join(TEST_ROOT, 'logs');
 pathsModule.PATHS.outputs = path.join(TEST_ROOT, 'outputs');
 
-const { listChatGPTTabs } = require('../src/automation/tabs');
+const { listChatGPTTabs, listSidebarConversations } = require('../src/automation/tabs');
 const { createTargetHandle, reconfirmTarget, toTargetInfo } = require('../src/automation/target');
 const { findComposer, getComposerText } = require('../src/automation/composer');
 const { sendOnce } = require('../src/automation/send');
@@ -80,6 +80,18 @@ async function main() {
     assert.ok(b && b.title === '副業アイデア', 'conv-bが検出できていること');
     await p1.close();
     await p2.close();
+  });
+
+  // --- 1.5 サイドバーの会話一覧: タブを開いていなくても選べるようにする ---
+  await check('サイドバーの会話一覧を取得できる(タブとして開いていない会話も含む)', async () => {
+    const page = await context.newPage();
+    await page.goto(mock.urlFor('conv-current', { title: '現在の会話' }));
+    const conversations = await listSidebarConversations(page);
+    const ids = conversations.map((c) => c.conversationId);
+    assert.ok(ids.includes('conv-a'), 'サイドバーのconv-aが取得できること(タブとしては開いていない)');
+    assert.ok(ids.includes('conv-b'), 'サイドバーのconv-bが取得できること(タブとしては開いていない)');
+    assert.ok(ids.includes('conv-current'), '現在表示中の会話も含まれること');
+    await page.close();
   });
 
   // --- 2. 対象固定: 対象タブが別会話へ移動したらtarget_changedになる ---

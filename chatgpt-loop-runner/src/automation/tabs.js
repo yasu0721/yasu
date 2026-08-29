@@ -32,4 +32,34 @@ async function listChatGPTTabs(context) {
   return tabs;
 }
 
-module.exports = { listChatGPTTabs };
+// 「タブを自分で複数開く」前提ではなく、ChatGPT画面のサイドバーに並んでいる
+// 会話一覧(普段のChatGPTの使い方はこちらが主流)から直接選べるようにするための関数。
+// タブとして開いていない会話も一覧に出す(選んだ時点でそのタブへ移動させる)。
+async function listSidebarConversations(page) {
+  let items;
+  try {
+    items = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll('a[href^="/c/"]'));
+      const seen = new Set();
+      const out = [];
+      for (const a of anchors) {
+        const href = a.getAttribute('href');
+        if (!href || seen.has(href)) continue;
+        seen.add(href);
+        const title = (a.innerText || a.textContent || '').trim() || '(無題のチャット)';
+        out.push({ url: location.origin + href, title });
+      }
+      return out;
+    });
+  } catch {
+    return [];
+  }
+  return items.map((it) => ({
+    url: it.url,
+    normalizedUrl: normalizeChatUrl(it.url),
+    conversationId: extractConversationId(it.url),
+    title: it.title,
+  }));
+}
+
+module.exports = { listChatGPTTabs, listSidebarConversations };

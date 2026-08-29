@@ -7,6 +7,11 @@ function pageHtml(conversationId, title) {
   return `<!doctype html>
 <html><head><meta charset="utf-8"><title>${title}</title></head>
 <body>
+<nav id="sidebar">
+  <a href="/c/conv-a">Xバズ企画の相談</a>
+  <a href="/c/conv-b">副業アイデア</a>
+  <a href="/c/${conversationId}">${title}</a>
+</nav>
 <div id="messages"></div>
 <div id="composer" contenteditable="true" role="textbox" aria-label="Send a message" data-composer></div>
 <button data-testid="send-button" aria-label="Send message" id="sendBtn">Send</button>
