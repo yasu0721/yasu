@@ -1,0 +1,7 @@
+node_modules/
+.browser-profile/
+config/config.json
+state/
+logs/
+outputs/
+*.log

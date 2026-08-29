@@ -1,0 +1,19 @@
+{
+  "name": "chatgpt-loop-runner",
+  "version": "0.1.0",
+  "private": true,
+  "description": "指定したChatGPTチャットへ同じ短い文字列を、回答完了を確認しながら指定回数だけ自動送信するローカル専用ツール",
+  "type": "commonjs",
+  "main": "src/electron/main.js",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "app": "electron .",
+    "test:mock": "node test/mock-flow.test.js"
+  },
+  "dependencies": {
+    "playwright": "^1.48.0"
+  },
+  "devDependencies": {
+    "electron": "^44.0.0"
+  }
+}
