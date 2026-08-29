@@ -227,15 +227,38 @@ const server = http.createServer((req, res) => {
 
 // CLI(start-app.sh等)からは自動でブラウザタブを開き、
 // Electronデスクトップアプリからはウィンドウ側で表示するのでopenBrowser:falseで呼ぶ。
-function startServer({ openBrowser = true, port = PORT } = {}) {
-  return new Promise((resolve) => {
-    server.listen(port, () => {
+// 前回起動したアプリがまだ裏で動いている等でPORTが使用中の場合は、
+// エラーで止めずに次の番号を自動で試す(最大20回)。
+function startServer({ openBrowser = true, port = PORT, attemptsLeft = 20 } = {}) {
+  return new Promise((resolve, reject) => {
+    // server.listen(port, callback)のcallback引数は失敗時に自動では外れず、
+    // 再試行のたびに'listening'リスナーが積み重なってしまう(次のポートで成功した瞬間、
+    // 古い試行のコールバックも一緒に呼ばれ、誤ったポート番号でログが出る)。
+    // そのため'error'/'listening'を自前で登録し、結果が出たら必ず両方外す。
+    const cleanup = () => {
+      server.removeListener('error', onError);
+      server.removeListener('listening', onListening);
+    };
+    const onError = (err) => {
+      cleanup();
+      if (err.code === 'EADDRINUSE' && attemptsLeft > 0) {
+        logger.warn('ポートが使用中のため次の番号を試します', { port, nextPort: port + 1 });
+        resolve(startServer({ openBrowser, port: port + 1, attemptsLeft: attemptsLeft - 1 }));
+        return;
+      }
+      reject(err);
+    };
+    const onListening = () => {
+      cleanup();
       const url = `http://localhost:${port}`;
       // eslint-disable-next-line no-console
       console.log(`ChatGPT Loop Runner を起動しました: ${url}`);
       if (openBrowser) openExternally(url);
       resolve({ server, port, url });
-    });
+    };
+    server.once('error', onError);
+    server.once('listening', onListening);
+    server.listen(port);
   });
 }
 
