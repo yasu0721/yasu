@@ -43,12 +43,22 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  let tabsLoading = false;
+
   async function api(method, url, body) {
-    const res = await fetch(url, {
-      method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let res;
+    try {
+      res = await fetch(url, {
+        method,
+        // ボタンを2回目以降押したときに、ブラウザ側の古い結果が使い回されないようにする。
+        cache: 'no-store',
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (err) {
+      // アプリ内部の通信そのものが届かなかったケース(サーバーが起動していない等)。
+      throw new Error(`アプリの内部通信に失敗しました(${err.message})`);
+    }
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `リクエストに失敗しました(${res.status})`);
     return data;
@@ -59,11 +69,18 @@
   }
 
   async function refreshTabs() {
+    tabsLoading = true;
     try {
       const data = await api('GET', '/api/tabs');
       tabs = data.tabs;
+      if (tabs.length === 0) {
+        console.log('[chatgpt-loop-runner] ChatGPTタブは0件でした(専用ブラウザでChatGPTを開いているか確認してください)');
+      }
     } catch (err) {
+      console.error('[chatgpt-loop-runner] チャット一覧の取得に失敗', err);
       errorMessage = `ChatGPTタブの取得に失敗しました: ${err.message}`;
+    } finally {
+      tabsLoading = false;
     }
   }
 
@@ -109,7 +126,7 @@
         <h2>対象ChatGPTチャット</h2>
         <div>対象：<strong>${config.target_chat ? escapeHtml(config.target_chat.title) : '未選択'}</strong></div>
         <ul class="chat-list" id="chatList">${chatItems}</ul>
-        <button class="btn" id="refreshTabsBtn">チャット一覧を更新</button>
+        <button class="btn" id="refreshTabsBtn" ${tabsLoading ? 'disabled' : ''}>${tabsLoading ? '更新中…' : 'チャット一覧を更新'}</button>
       </div>
       <div class="card">
         <h2>送る文字・回数</h2>
@@ -138,6 +155,8 @@
 
     document.getElementById('refreshTabsBtn').onclick = async () => {
       errorMessage = '';
+      tabsLoading = true;
+      render(); // すぐに「更新中…」表示へ切り替える
       await refreshTabs();
       render();
     };
