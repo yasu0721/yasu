@@ -11,6 +11,14 @@ if not exist node_modules (
   )
 )
 
+echo ChatGPTを操作するための部品を確認しています(初回や更新後は少し時間がかかります)...
+call npx playwright install chromium
+if errorlevel 1 (
+  echo 部品の準備に失敗しました。インターネット接続を確認して、もう一度お試しください。
+  pause
+  exit /b 1
+)
+
 echo ChatGPT Loop Runner を起動します。
 call npx electron .
 
