@@ -52,7 +52,13 @@ async function callGpt(id, material, extraInstruction = '') {
   }
 
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  const clientOptions = { apiKey: process.env.ANTHROPIC_API_KEY };
+  // 組織(ワークスペース)に紐づいたAPIキーの場合、リクエストごとに
+  // どのワークスペースとして動くかを明示する必要がある。
+  if (process.env.ANTHROPIC_WORKSPACE_ID) {
+    clientOptions.defaultHeaders = { 'anthropic-workspace-id': process.env.ANTHROPIC_WORKSPACE_ID };
+  }
+  const client = new Anthropic(clientOptions);
   const model = process.env.ANTHROPIC_MODEL || 'claude-opus-5';
 
   const response = await client.messages.create({
