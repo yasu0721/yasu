@@ -1,0 +1,17 @@
+[2026-08-29T17:02:31.306Z] read_input: 入力なし
+[2026-08-29T17:02:31.509Z] read_input: 成功 - 文字数=103
+[2026-08-29T17:02:32.142Z] browser_test: 失敗 - browserType.launch: Executable doesn't exist at /opt/pw-browsers/chromium_headless_shell-1234/chrome-headless-shell-linux64/chrome-headless-shell
+╔════════════════════════════════════════════════════════════╗
+║ Looks like Playwright was just installed or updated.       ║
+║ Please run the following command to download new browsers: ║
+║                                                            ║
+║     npx playwright install                                 ║
+║                                                            ║
+║ <3 Playwright Team                                         ║
+╚════════════════════════════════════════════════════════════╝
+[2026-08-29T17:03:18.837Z] browser_test: 失敗 - page.goto: net::ERR_TUNNEL_CONNECTION_FAILED at https://example.com/
+Call log:
+[2m  - navigating to "https://example.com/", waiting until "load"[22m
+
+[2026-08-29T17:03:40.212Z] browser_test: 成功 - title=x-ai-editor ブラウザテスト
+[2026-08-29T17:07:09.842Z] router: 成功 - run_id=20260829_170709 mocked=true

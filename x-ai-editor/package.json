@@ -1,0 +1,15 @@
+{
+  "name": "x-ai-editor",
+  "version": "0.1.0",
+  "private": true,
+  "description": "X投稿ネタ作りを半自動化するためのプロジェクト",
+  "scripts": {
+    "read-input": "node automation/read_input.js",
+    "test-browser": "node automation/browser_test.js",
+    "router": "node automation/router.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
+    "playwright": "^1.48.0"
+  }
+}

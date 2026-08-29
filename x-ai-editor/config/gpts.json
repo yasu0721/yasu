@@ -1,0 +1,15 @@
+{
+  "gpts": [
+    { "id": "router", "name": "振り分けGPT", "role_type": "router", "prompt_file": "router.txt", "enabled": true, "order": 1 },
+    { "id": "comment", "name": "コメントGPT", "role_type": "specialist", "prompt_file": "comment.txt", "enabled": true, "order": 2 },
+    { "id": "quote", "name": "引用RT・一般人化GPT", "role_type": "specialist", "prompt_file": "quote.txt", "enabled": true, "order": 3 },
+    { "id": "meme", "name": "ネット民・ミームGPT", "role_type": "specialist", "prompt_file": "meme.txt", "enabled": true, "order": 4 },
+    { "id": "expert", "name": "専門家→一般人価値変換GPT", "role_type": "specialist", "prompt_file": "expert.txt", "enabled": true, "order": 5 },
+    { "id": "deep", "name": "深掘り・有料級GPT", "role_type": "specialist", "prompt_file": "deep.txt", "enabled": true, "order": 6 },
+    { "id": "person", "name": "人物ニュース・人生一般化GPT", "role_type": "specialist", "prompt_file": "person.txt", "enabled": true, "order": 7 },
+    { "id": "debate", "name": "賛否・二段反転GPT", "role_type": "specialist", "prompt_file": "debate.txt", "enabled": true, "order": 8 },
+    { "id": "recursive", "name": "自己問題生成・超深掘りGPT", "role_type": "specialist", "prompt_file": "recursive.txt", "enabled": true, "order": 9 },
+    { "id": "buzz", "name": "バズ企画GPT", "role_type": "specialist", "prompt_file": "buzz.txt", "enabled": true, "order": 10 },
+    { "id": "editor", "name": "編集長GPT", "role_type": "editor", "prompt_file": "editor.txt", "enabled": true, "order": 11 }
+  ]
+}
