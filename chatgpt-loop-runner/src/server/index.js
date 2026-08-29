@@ -16,7 +16,16 @@ const PORT = Number(process.env.PORT) || 4173;
 ensureDirs();
 
 async function ensureBrowser() {
-  await launchBrowserContext({ headless: process.env.CHATGPT_LOOP_RUNNER_HEADLESS === '1' });
+  try {
+    await launchBrowserContext({ headless: process.env.CHATGPT_LOOP_RUNNER_HEADLESS === '1' });
+  } catch (err) {
+    if (/Executable doesn't exist/i.test(err.message)) {
+      throw new Error(
+        'ChatGPTを操作するためのブラウザ部品がまだ準備できていません。フォルダの中の node_modules というフォルダを削除してから、start-app.bat をもう一度実行してください(自動で再ダウンロードされます)。'
+      );
+    }
+    throw err;
+  }
   return getContext();
 }
 
@@ -205,8 +214,8 @@ const server = http.createServer((req, res) => {
       const m = pathname.match(pattern);
       if (!m) continue;
       Promise.resolve(handler(req, res, m)).catch((err) => {
-        logger.error('APIエラー', { pathname, error: err.message });
-        sendJson(res, 500, { error: '内部エラーが発生しました。詳細はlogsを確認してください。' });
+        logger.error('APIエラー', { pathname, error: err.message, stack: err.stack });
+        sendJson(res, 500, { error: `うまくいきませんでした: ${err.message}` });
       });
       return;
     }
