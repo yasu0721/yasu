@@ -17,13 +17,13 @@
     running: '実行中',
     paused: '一時停止',
     stopped: '停止しました',
-    timeout: 'タイムアウトしました',
-    unknown: '要確認(送信結果不明)',
-    failed: '失敗しました',
+    timeout: '時間がかかりすぎたため止まりました',
+    unknown: '要確認(送信できたか分かりません)',
+    failed: 'うまくいきませんでした',
     completed: '完了しました',
-    interrupted: '割り込みを検知しました',
+    interrupted: '途中で別の操作が入ったため止まりました',
     login_required: 'ログインが必要です',
-    needs_review: '要確認(整合性エラー)',
+    needs_review: '要確認(保存内容に問題があるかもしれません)',
   };
   const ITER_LABEL = {
     pending: '待機中',
@@ -32,11 +32,11 @@
     answering: 'ChatGPTが回答中です',
     answer_completed: '回答完了を確認しました',
     saved: '保存しました',
-    unknown: '送信結果を確認できません',
-    failed: '失敗しました',
-    error: 'エラーが発生しました',
-    interrupted: '割り込みを検知しました',
-    timeout: 'タイムアウトしました',
+    unknown: '送信できたか確認できません',
+    failed: 'うまくいきませんでした',
+    error: 'うまくいきませんでした',
+    interrupted: '途中で別の操作が入りました',
+    timeout: '時間がかかりすぎたため止まりました',
   };
 
   function escapeHtml(s) {
@@ -91,7 +91,7 @@
 
   // ---------- render: setup ----------
   function renderSetup() {
-    const dryRunBanner = config.dry_run ? `<div class="banner-dryrun">DRY RUN：実際には送信しません</div>` : '';
+    const dryRunBanner = config.dry_run ? `<div class="banner-dryrun">お試しモード：実際には送信しません</div>` : '';
     const chatItems = tabs.length
       ? tabs
           .map(
@@ -115,20 +115,20 @@
         <h2>送る文字・回数</h2>
         <label>送る文字</label>
         <input type="text" id="sendText" value="${escapeHtml(config.send_text)}" />
-        <label>繰り返し回数(安全上限: ${config.max_repeat_count}回)</label>
+        <label>繰り返す回数(最大 ${config.max_repeat_count} 回まで)</label>
         <input type="number" id="repeatCount" min="1" max="${config.max_repeat_count}" value="${config.repeat_count}" />
-        <div class="detail-toggle" id="toggleDetail">詳細設定を${detailOpen ? '閉じる ▲' : '開く ▼'}</div>
+        <div class="detail-toggle" id="toggleDetail">くわしい設定を${detailOpen ? '閉じる ▲' : '開く ▼'}</div>
         <div class="detail-body ${detailOpen ? 'open' : ''}">
-          <label><input type="checkbox" id="dryRunCk" ${config.dry_run ? 'checked' : ''}/> DRY RUN(実際には送信しない)</label>
+          <label><input type="checkbox" id="dryRunCk" ${config.dry_run ? 'checked' : ''}/> お試しモード(実際には送信しない)</label>
           <div class="row">
-            <div><label>回答開始タイムアウト(秒)</label><input type="number" id="startTimeout" value="${config.answer_start_timeout_sec}"/></div>
-            <div><label>回答完了タイムアウト(秒)</label><input type="number" id="completeTimeout" value="${config.answer_complete_timeout_sec}"/></div>
+            <div><label>返事が始まるまで待つ時間(秒)</label><input type="number" id="startTimeout" value="${config.answer_start_timeout_sec}"/></div>
+            <div><label>返事が終わるまで待つ最大の時間(秒)</label><input type="number" id="completeTimeout" value="${config.answer_complete_timeout_sec}"/></div>
           </div>
           <div class="row">
-            <div><label>回答安定確認秒数</label><input type="number" id="stableSec" value="${config.answer_stable_sec}"/></div>
-            <div><label>完了後の追加待機(秒)</label><input type="number" id="betweenDelay" value="${config.between_iterations_delay_sec}"/></div>
+            <div><label>返事が止まったと判断するまでの時間(秒)</label><input type="number" id="stableSec" value="${config.answer_stable_sec}"/></div>
+            <div><label>次を送る前に少し待つ時間(秒)</label><input type="number" id="betweenDelay" value="${config.between_iterations_delay_sec}"/></div>
           </div>
-          <label>安全上限(max_repeat_count)</label>
+          <label>回数の上限(安全のため。ここより多くは設定できません)</label>
           <input type="number" id="maxRepeat" value="${config.max_repeat_count}"/>
         </div>
       </div>
@@ -202,7 +202,7 @@
         <div>対象：<strong>${escapeHtml(config.target_chat ? config.target_chat.title : '未選択')}</strong></div>
         <div>送信：<strong>${escapeHtml(config.send_text)}</strong></div>
         <div>回数：<strong>${config.repeat_count}回</strong></div>
-        ${config.dry_run ? '<div class="banner-dryrun" style="margin-top:10px;">DRY RUN：実際には送信しません</div>' : ''}
+        ${config.dry_run ? '<div class="banner-dryrun" style="margin-top:10px;">お試しモード：実際には送信しません</div>' : ''}
         <div class="actions">
           <button class="btn btn-secondary" id="confirmBack">戻る</button>
           <button class="btn btn-primary" id="confirmGo">開始する</button>
@@ -311,11 +311,11 @@
       const area = document.getElementById('unknownArea');
       if (!area) return;
       area.innerHTML = `
-        <div class="error-box">${escapeHtml((summary && summary.detail) || `${run.current_count + 1}回目の送信結果を確認できません。重複送信防止のため自動再開を停止しました。`)}</div>
+        <div class="error-box">${escapeHtml((summary && summary.detail) || `${run.current_count + 1}回目が送信できたか確認できません。同じ内容を2回送ってしまわないよう、自動では続きを進めません。`)}</div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">
-          <button class="btn" data-d="mark_sent_continue">送信済みとして続ける</button>
-          <button class="btn" data-d="mark_unsent_retry">未送信として再実行</button>
-          <button class="btn btn-danger" data-d="end_run">このrunを終了</button>
+          <button class="btn" data-d="mark_sent_continue">送信できたとみなして続ける</button>
+          <button class="btn" data-d="mark_unsent_retry">送信できていないとみなしてやり直す</button>
+          <button class="btn btn-danger" data-d="end_run">ここで終わりにする</button>
         </div>`;
       area.querySelectorAll('button[data-d]').forEach((btn) => {
         btn.onclick = async () => {

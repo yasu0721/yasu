@@ -46,25 +46,26 @@ function validateRunParams(config) {
 
   const maxRepeat = Number(config.max_repeat_count);
   if (!Number.isInteger(maxRepeat) || maxRepeat <= 0) {
-    errors.push('安全上限(max_repeat_count)の設定が不正です');
+    errors.push('回数の上限の設定がおかしくなっています');
   } else if (Number.isInteger(repeatCount) && repeatCount > maxRepeat) {
-    errors.push(`繰り返し回数(${repeatCount})が安全上限(${maxRepeat})を超えています`);
+    errors.push(`繰り返し回数(${repeatCount}回)が上限(${maxRepeat}回)を超えています`);
   }
 
   if (typeof config.dry_run !== 'boolean') {
-    errors.push('dry_runの設定が不正です');
+    errors.push('お試しモードの設定がおかしくなっています');
   }
 
-  for (const key of [
-    'answer_start_timeout_sec',
-    'answer_complete_timeout_sec',
-    'answer_stable_sec',
-    'between_iterations_delay_sec',
-    'poll_interval_ms',
-  ]) {
+  const timeoutFieldLabels = {
+    answer_start_timeout_sec: '返事が始まるまで待つ時間',
+    answer_complete_timeout_sec: '返事が終わるまで待つ時間',
+    answer_stable_sec: '返事が止まったと判断するまでの時間',
+    between_iterations_delay_sec: '次を送る前に待つ時間',
+    poll_interval_ms: '画面を確認する間隔',
+  };
+  for (const [key, label] of Object.entries(timeoutFieldLabels)) {
     const v = Number(config[key]);
     if (!Number.isFinite(v) || v < 0) {
-      errors.push(`${key} の設定が不正です`);
+      errors.push(`「${label}」の設定がおかしくなっています`);
     }
   }
 

@@ -18,7 +18,7 @@ function getActiveRun() {
 
 function assertNotBusy() {
   if (isAnyRunActive()) {
-    const err = new Error('別のrunが実行中です。先に安全に停止してください。');
+    const err = new Error('他の処理がすでに実行中です。先に「安全に停止」を押してください。');
     err.code = 'BUSY';
     throw err;
   }
@@ -56,7 +56,7 @@ async function startNewRun(context, config) {
 function requestStop(runId, mode) {
   const run = stateStore.loadRun(runId);
   if (!run) {
-    const err = new Error('runが見つかりません');
+    const err = new Error('指定した実行が見つかりません');
     err.code = 'NOT_FOUND';
     throw err;
   }

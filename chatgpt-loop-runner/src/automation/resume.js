@@ -127,6 +127,7 @@ async function recoverAndContinue(runId, context, handle, iterationNumber) {
       : recoveryProbe.status === 'interrupted'
       ? RUN_STATUS.INTERRUPTED
       : RUN_STATUS.PAUSED;
+  run.pause_reason = recoveryProbe.detail || null;
   stateStore.releaseLock(run);
 }
 

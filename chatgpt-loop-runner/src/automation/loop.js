@@ -62,7 +62,7 @@ async function runLoop(runId, { context, startIteration, resumeNote }) {
       const targetCheck = await reconfirmTarget(context, handle);
       if (!targetCheck.ok) {
         run.status = RUN_STATUS.PAUSED;
-        run.pause_reason = targetCheck.reason;
+        run.pause_reason = targetCheck.detail || '対象のChatGPTチャットが見つかりません。ChatGPTで対象のチャットを開いてください。';
         stateStore.saveRun(run);
         logger.warn('対象チャットを確認できないため停止しました', { run_id: runId, reason: targetCheck.reason });
         return finish(run);

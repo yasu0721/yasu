@@ -130,7 +130,7 @@ async function handleGetActiveRun(req, res) {
 
 async function handleGetRun(req, res, runId) {
   const run = runManager.loadRun(runId);
-  if (!run) return sendJson(res, 404, { error: 'runが見つかりません' });
+  if (!run) return sendJson(res, 404, { error: '指定した実行が見つかりません' });
   sendJson(res, 200, run);
 }
 
@@ -165,7 +165,7 @@ async function handleResume(req, res, runId) {
 
 async function handleAllResponses(req, res, runId) {
   const run = runManager.loadRun(runId);
-  if (!run) return sendJson(res, 404, { error: 'runが見つかりません' });
+  if (!run) return sendJson(res, 404, { error: '指定した実行が見つかりません' });
   const filePath = path.join(runManager.runOutputsDir(runId), 'all_responses.txt');
   if (!fs.existsSync(filePath)) return sendJson(res, 404, { error: 'まだ回答が保存されていません' });
   res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
