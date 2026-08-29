@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { PATHS, ensureDirs } = require('../paths');
 const { loadConfig, saveConfig, validateRunParams } = require('../config/configStore');
-const { launchBrowserContext, getContext } = require('../automation/browser');
+const { launchBrowserContext, getContext, ensureChatGPTPageOpen } = require('../automation/browser');
 const { listChatGPTTabs } = require('../automation/tabs');
 const { toTargetInfo, matchesTarget } = require('../automation/target');
 const runManager = require('../automation/runManager');
@@ -82,7 +82,13 @@ function serveStatic(req, res, pathname) {
 
 async function handleGetTabs(req, res) {
   const context = await ensureBrowser();
-  const tabs = await listChatGPTTabs(context);
+  let tabs = await listChatGPTTabs(context);
+  if (tabs.length === 0) {
+    // 専用ブラウザでChatGPTのタブが1つも無い(閉じてしまった等)場合、
+    // 真っ白な画面のまま気づかれないよりはと、自動で開き直す。
+    await ensureChatGPTPageOpen(context);
+    tabs = await listChatGPTTabs(context);
+  }
   sendJson(res, 200, { tabs });
 }
 

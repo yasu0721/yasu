@@ -1,5 +1,6 @@
 const { chromium } = require('playwright');
 const { PATHS, ensureDirs } = require('../paths');
+const { isOfficialChatGPTUrl } = require('./chatgptGuard');
 
 let sharedContext = null;
 
@@ -13,7 +14,27 @@ async function launchBrowserContext({ headless = false } = {}) {
     viewport: null,
     args: ['--start-maximized'],
   });
+  await ensureChatGPTPageOpen(sharedContext);
   return sharedContext;
+}
+
+// 専用ブラウザに真っ白な画面だけが表示され、ChatGPTを開き忘れて
+// 普段使いのブラウザへ戻ってしまう、という初心者の詰まりを防ぐため、
+// ChatGPTのタブが1つもない場合は自動でchatgpt.comを開いておく。
+async function ensureChatGPTPageOpen(context) {
+  const pages = context.pages();
+  const hasChatGPT = pages.some((p) => {
+    try {
+      return isOfficialChatGPTUrl(p.url());
+    } catch {
+      return false;
+    }
+  });
+  if (hasChatGPT) return;
+  const blank = pages.find((p) => p.url() === 'about:blank');
+  const page = blank || (await context.newPage());
+  await page.goto('https://chatgpt.com/', { waitUntil: 'domcontentloaded' }).catch(() => {});
+  await page.bringToFront().catch(() => {});
 }
 
 async function getContext() {
@@ -30,4 +51,4 @@ async function closeBrowserContext() {
   }
 }
 
-module.exports = { launchBrowserContext, getContext, closeBrowserContext };
+module.exports = { launchBrowserContext, getContext, closeBrowserContext, ensureChatGPTPageOpen };
