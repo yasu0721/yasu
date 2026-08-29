@@ -216,9 +216,22 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, pathname);
 });
 
-server.listen(PORT, () => {
-  const url = `http://localhost:${PORT}`;
-  // eslint-disable-next-line no-console
-  console.log(`ChatGPT Loop Runner を起動しました: ${url}`);
-  openExternally(url);
-});
+// CLI(start-app.sh等)からは自動でブラウザタブを開き、
+// Electronデスクトップアプリからはウィンドウ側で表示するのでopenBrowser:falseで呼ぶ。
+function startServer({ openBrowser = true, port = PORT } = {}) {
+  return new Promise((resolve) => {
+    server.listen(port, () => {
+      const url = `http://localhost:${port}`;
+      // eslint-disable-next-line no-console
+      console.log(`ChatGPT Loop Runner を起動しました: ${url}`);
+      if (openBrowser) openExternally(url);
+      resolve({ server, port, url });
+    });
+  });
+}
+
+module.exports = { startServer };
+
+if (require.main === module) {
+  startServer({ openBrowser: true });
+}

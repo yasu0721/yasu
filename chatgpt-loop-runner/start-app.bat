@@ -11,7 +11,7 @@ if not exist node_modules (
   )
 )
 
-echo ChatGPT Loop Runner を起動します。ブラウザが自動で開きます。
-node src\server\index.js
+echo ChatGPT Loop Runner を起動します。
+call npx electron .
 
 pause

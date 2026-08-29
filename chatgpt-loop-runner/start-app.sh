@@ -7,5 +7,5 @@ if [ ! -d node_modules ]; then
   npm install
 fi
 
-echo "ChatGPT Loop Runner を起動します。ブラウザが自動で開きます。"
-node src/server/index.js
+echo "ChatGPT Loop Runner を起動します。"
+npx electron .
