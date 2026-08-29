@@ -41,6 +41,13 @@ function mockReply(gpt, material) {
       `【避けるもの】\n断定的すぎる表現(素材: ${preview}...)`
     );
   }
+  if (gpt.role_type === 'editor') {
+    return (
+      `[MOCK/${gpt.name}] ANTHROPIC_API_KEY未設定のため、これはダミー応答です。\n\n` +
+      `【1位】\n(モック)候補を比較・統合した最終案がここに入ります。\n\n` +
+      `【2位】\n(モック)次点の案がここに入ります。`
+    );
+  }
   return `[MOCK/${gpt.name}] ANTHROPIC_API_KEY未設定のため、これはダミー応答です。\n受け取った素材(先頭): ${preview}...`;
 }
 
