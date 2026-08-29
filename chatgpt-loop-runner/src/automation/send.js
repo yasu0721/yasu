@@ -11,6 +11,11 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// contenteditableの改行コードや前後の余白の差で不一致にならないよう、空白類を無視して比較する。
+function normalizeForCompare(s) {
+  return (s || '').replace(/\s+/g, '');
+}
+
 /**
  * 対象チャットへ send_text を「1回だけ」送信する。
  * dryRun=true のときはDOMへ一切入力・送信操作をしない。
@@ -65,7 +70,7 @@ async function sendOnce({ context, handle, sendText, dryRun }) {
 
     await setComposerText(composer, sendText);
     const filled = await getComposerText(composer);
-    if (filled.trim() !== sendText.trim()) {
+    if (normalizeForCompare(filled) !== normalizeForCompare(sendText)) {
       return {
         status: 'blocked',
         reason: 'composer_mismatch_after_fill',
@@ -88,14 +93,17 @@ async function sendOnce({ context, handle, sendText, dryRun }) {
     }
 
     // 送信成功確認: 入力欄が空になり、ユーザーメッセージが1件増え、その内容が一致するか。
+    // 実際のChatGPT画面の描画が少し遅れることがあるため、最大16秒(500ms×32回)確認する。
     let confirmed = false;
-    for (let attempt = 0; attempt < 10; attempt++) {
+    let lastObserved = null;
+    for (let attempt = 0; attempt < 32; attempt++) {
       await sleep(500);
       const after = await countMessages(page);
       const composerEmptyNow = await isComposerEmpty(composer).catch(() => false);
+      const latestUserText = await getLatestByRole(page, 'user');
+      lastObserved = { userCountAfter: after.user, composerEmptyNow, latestUserText };
       if (after.user === before.user + 1 && composerEmptyNow) {
-        const latestUserText = await getLatestByRole(page, 'user');
-        if (latestUserText && latestUserText.trim() === sendText.trim()) {
+        if (latestUserText && normalizeForCompare(latestUserText) === normalizeForCompare(sendText)) {
           confirmed = true;
           break;
         }
@@ -105,7 +113,12 @@ async function sendOnce({ context, handle, sendText, dryRun }) {
     if (confirmed) {
       return { status: 'sent', sent_at: sentAt, before_user_count: before.user, before_assistant_count: before.assistant };
     }
-    logger.warn('送信成功を確認できませんでした(unknown状態)', { target: handle.info.normalizedUrl });
+    logger.warn('送信成功を確認できませんでした(unknown状態)', {
+      target: handle.info.normalizedUrl,
+      sendText,
+      before_user_count: before.user,
+      last_observed: lastObserved,
+    });
     return {
       status: 'unknown',
       sent_at: sentAt,
