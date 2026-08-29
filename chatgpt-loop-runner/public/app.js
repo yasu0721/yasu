@@ -3,6 +3,7 @@
 
   let config = null;
   let tabs = [];
+  let conversations = [];
   let view = 'setup'; // 'setup' | 'confirm' | 'running' | 'history' | 'history-detail'
   let activeRun = null;
   let detailOpen = false;
@@ -71,8 +72,12 @@
   async function refreshTabs() {
     tabsLoading = true;
     try {
-      const data = await api('GET', '/api/tabs');
-      tabs = data.tabs;
+      const [tabsData, convData] = await Promise.all([
+        api('GET', '/api/tabs'),
+        api('GET', '/api/conversations').catch(() => ({ conversations: [] })),
+      ]);
+      tabs = tabsData.tabs;
+      conversations = convData.conversations || [];
       if (tabs.length === 0) {
         console.log('[chatgpt-loop-runner] ChatGPTタブは0件でした(専用ブラウザでChatGPTを開いているか確認してください)');
       }
@@ -106,13 +111,34 @@
     }, 1000);
   }
 
+  // タブとして開いているものと、サイドバーの会話一覧の両方から重複なく一覧化する。
+  // 選んだ時点でタブとして開いていなくても、選択時に専用ブラウザ側でその会話を開く。
+  function getSelectableChats() {
+    const seen = new Set();
+    const combined = [];
+    for (const c of conversations) {
+      const key = c.conversationId || c.normalizedUrl;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      combined.push(c);
+    }
+    for (const t of tabs) {
+      const key = t.conversationId || t.normalizedUrl;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      combined.push(t);
+    }
+    return combined;
+  }
+
   // ---------- render: setup ----------
   function renderSetup() {
     const dryRunBanner = config.dry_run ? `<div class="banner-dryrun">お試しモード：実際には送信しません</div>` : '';
-    const chatItems = tabs.length
-      ? tabs
+    const selectableChats = getSelectableChats();
+    const chatItems = selectableChats.length
+      ? selectableChats
           .map(
-            (t, i) => `<li data-conv="${escapeHtml(t.conversationId || '')}" data-idx="${t.index}" class="tabItem ${isSelectedTab(t) ? 'selected' : ''}">
+            (t, i) => `<li data-idx="${i}" class="tabItem ${isSelectedTab(t) ? 'selected' : ''}">
               ○ ${escapeHtml(t.title)}<span class="url">${escapeHtml(t.url)}</span>
             </li>`
           )
@@ -162,9 +188,15 @@
     };
     document.querySelectorAll('.tabItem').forEach((el) => {
       el.onclick = async () => {
-        const idx = Number(el.dataset.idx);
+        const item = selectableChats[Number(el.dataset.idx)];
+        if (!item) return;
         try {
-          config = await api('POST', '/api/target', { index: idx, conversationId: el.dataset.conv || undefined });
+          config = await api('POST', '/api/target', {
+            conversationId: item.conversationId || undefined,
+            index: item.index != null ? item.index : undefined,
+            url: item.url,
+            title: item.title,
+          });
           errorMessage = '';
         } catch (err) {
           errorMessage = err.message;

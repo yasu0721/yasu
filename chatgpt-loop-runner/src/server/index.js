@@ -4,8 +4,9 @@ const path = require('path');
 const { PATHS, ensureDirs } = require('../paths');
 const { loadConfig, saveConfig, validateRunParams } = require('../config/configStore');
 const { launchBrowserContext, getContext, ensureChatGPTPageOpen } = require('../automation/browser');
-const { listChatGPTTabs } = require('../automation/tabs');
+const { listChatGPTTabs, listSidebarConversations } = require('../automation/tabs');
 const { toTargetInfo, matchesTarget } = require('../automation/target');
+const { isOfficialChatGPTUrl } = require('../automation/chatgptGuard');
 const runManager = require('../automation/runManager');
 const outputStore = require('../outputs/outputStore');
 const logger = require('../logger');
@@ -107,12 +108,59 @@ async function handlePostConfig(req, res) {
   sendJson(res, 200, next);
 }
 
+function findOfficialPage(context) {
+  return context.pages().find((p) => {
+    try {
+      return isOfficialChatGPTUrl(p.url());
+    } catch {
+      return false;
+    }
+  });
+}
+
+async function handleGetConversations(req, res) {
+  const context = await ensureBrowser();
+  let officialPage = findOfficialPage(context);
+  if (!officialPage) {
+    await ensureChatGPTPageOpen(context);
+    officialPage = findOfficialPage(context);
+  }
+  if (!officialPage) return sendJson(res, 200, { conversations: [] });
+  const conversations = await listSidebarConversations(officialPage);
+  sendJson(res, 200, { conversations });
+}
+
 async function handlePostTarget(req, res) {
   const body = await readJsonBody(req);
   const context = await ensureBrowser();
+
+  // 既に開いているタブの中に一致するものがあればそれを使う(番号や会話IDでの指定)。
   const tabs = await listChatGPTTabs(context);
-  const tab = tabs.find((t) => (body.conversationId && t.conversationId === body.conversationId) || t.index === body.index);
-  if (!tab) return sendJson(res, 404, { error: '指定されたChatGPTタブが見つかりません' });
+  let tab = tabs.find((t) => (body.conversationId && t.conversationId === body.conversationId) || (body.index != null && t.index === body.index));
+
+  if (!tab && body.url) {
+    // サイドバーの会話一覧から選んだ場合(まだ独立したタブとしては開かれていない)、
+    // 既存のChatGPTタブをそのままその会話へ移動させてから対象にする。
+    const officialPage = findOfficialPage(context);
+    if (!officialPage) {
+      return sendJson(res, 404, { error: 'ChatGPTのタブが見つかりません。ChatGPTを開いてから、もう一度お試しください。' });
+    }
+    try {
+      await officialPage.goto(body.url, { waitUntil: 'domcontentloaded' });
+    } catch (err) {
+      return sendJson(res, 500, { error: `会話を開けませんでした: ${err.message}` });
+    }
+    await officialPage.bringToFront().catch(() => {});
+    let title = body.title || '';
+    try {
+      title = (await officialPage.title()) || title;
+    } catch {
+      // タイトル取得に失敗しても選択自体は続行する
+    }
+    tab = { url: officialPage.url(), title };
+  }
+
+  if (!tab) return sendJson(res, 404, { error: '指定されたChatGPTチャットが見つかりません' });
   const config = saveConfig({ target_chat: toTargetInfo(tab) });
   sendJson(res, 200, config);
 }
@@ -205,6 +253,7 @@ async function handleOpenOutputsFolder(req, res, runId) {
 
 const routes = [
   ['GET', /^\/api\/tabs$/, (req, res) => handleGetTabs(req, res)],
+  ['GET', /^\/api\/conversations$/, (req, res) => handleGetConversations(req, res)],
   ['GET', /^\/api\/config$/, (req, res) => handleGetConfig(req, res)],
   ['POST', /^\/api\/config$/, (req, res) => handlePostConfig(req, res)],
   ['POST', /^\/api\/target$/, (req, res) => handlePostTarget(req, res)],
