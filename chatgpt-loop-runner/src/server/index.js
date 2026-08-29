@@ -18,7 +18,9 @@ ensureDirs();
 
 async function ensureBrowser() {
   try {
-    await launchBrowserContext({ headless: process.env.CHATGPT_LOOP_RUNNER_HEADLESS === '1' });
+    const config = loadConfig();
+    const cdpUrl = config.chrome_debug_port ? `http://localhost:${config.chrome_debug_port}` : null;
+    await launchBrowserContext({ headless: process.env.CHATGPT_LOOP_RUNNER_HEADLESS === '1', cdpUrl });
   } catch (err) {
     if (/Executable doesn't exist/i.test(err.message)) {
       throw new Error(

@@ -173,6 +173,12 @@
           </div>
           <label>回数の上限(安全のため。ここより多くは設定できません)</label>
           <input type="number" id="maxRepeat" value="${config.max_repeat_count}"/>
+          <label style="margin-top:16px;">上級者向け：いつものChromeに接続するポート番号(空欄なら専用ブラウザを使用)</label>
+          <input type="text" id="cdpPort" placeholder="例: 9222" value="${config.chrome_debug_port || ''}"/>
+          <div style="font-size:12px; color:#888; margin-top:4px;">
+            設定するには、いつものChromeを完全に閉じてから、特別な方法で開き直す必要があります(README参照)。
+            変更はアプリを再起動すると反映されます。うまく繋がらない場合は空欄に戻してください。
+          </div>
         </div>
       </div>
       <button class="btn btn-primary" id="startBtn">開始</button>
@@ -222,6 +228,12 @@
       answer_stable_sec: numOr('stableSec', config.answer_stable_sec),
       between_iterations_delay_sec: numOr('betweenDelay', config.between_iterations_delay_sec),
       max_repeat_count: numOr('maxRepeat', config.max_repeat_count),
+      chrome_debug_port: (() => {
+        const el = document.getElementById('cdpPort');
+        if (!el || !el.value.trim()) return null;
+        const n = Number(el.value.trim());
+        return Number.isFinite(n) && n > 0 ? n : null;
+      })(),
     };
   }
   function numOr(id, fallback) {
