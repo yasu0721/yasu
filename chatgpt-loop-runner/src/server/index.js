@@ -24,6 +24,11 @@ async function ensureBrowser() {
         'ChatGPTを操作するためのブラウザ部品がまだ準備できていません。フォルダの中の node_modules というフォルダを削除してから、start-app.bat をもう一度実行してください(自動で再ダウンロードされます)。'
       );
     }
+    if (/ProcessSingleton|SingletonLock|already running|user data directory is already in use/i.test(err.message)) {
+      throw new Error(
+        '前回起動した専用ブラウザがまだ裏で残っている可能性があります。パソコンを再起動してから、もう一度お試しください。'
+      );
+    }
     throw err;
   }
   return getContext();
