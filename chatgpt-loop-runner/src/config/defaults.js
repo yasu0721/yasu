@@ -6,6 +6,7 @@ module.exports = {
   repeat_count: 1,
   max_repeat_count: 50,
   dry_run: true,
+  chrome_debug_port: null, // 指定するといつものChromeへ接続する(上級者向け)。空ならこのツール専用のブラウザを使う。
   answer_start_timeout_sec: 60,
   answer_complete_timeout_sec: 600,
   answer_stable_sec: 3,
